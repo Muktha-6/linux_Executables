@@ -12,7 +12,7 @@
 
 /* when i try to execute any program 
 
-first --> shell takes all the command and creates a separate thread (a child process)
+first --> shell takes all the command and creates a child process
        -> then calls execv on it 
        -> execv creates a stack that  stores the argcount and argvectors
        -> then the kernel loads elf file and again creates a stack with the info on argcount and argvectors 
