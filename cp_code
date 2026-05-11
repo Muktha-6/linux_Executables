@@ -1,0 +1,98 @@
+#include <stdio.h>
+/*For using access*/
+#include <unistd.h>
+/*For using open*/
+#include <fcntl.h>
+/*For using stat*/
+#include <sys/stat.h>
+
+//1st write a main that accepts 2 arguments mainly the number of arguments and the arguments -- 
+// The expected command is something like
+// .\cp_exec.c src.txt dest.txt
+
+/* when i try to execute any program 
+
+first --> shell takes all the command and creates a separate thread (a child process)
+       -> then calls execv on it 
+       -> execv creates a stack that  stores the argcount and argvectors
+       -> then the kernel loads elf file and again creates a stack with the info on argcount and argvectors 
+       -> calls a start function that calls main inside it with the argcount and vectors
+*/
+
+/*To store the read data size*/
+ssize_t bytes_read = 0;
+
+/*pointer to store the read data*/
+char prddata[100];
+
+/*Function to copy the contents from source file and paste it to destination file*/
+void fpCopytoDest(int nsrcfd , int ndestfd)
+{
+while((bytes_read = read(nsrcfd, (void*)&prddata, sizeof(prddata)))>0)
+ {
+/*Copy the content of source file to destination*/
+ write(ndestfd, (void*)&prddata, bytes_read);
+  }
+
+}
+
+int main(int argc , char* argvector[])
+{
+
+int ret;
+char* psrcfile = argvector[1];
+char* pdestfile = argvector[2];
+/*For storing file information*/
+struct stat odestfileinfo;
+struct stat osrcfileinfo;
+char usrchoice;
+
+/*check if the parameters are 3 or 4*/
+if(argc>= 3 &&  argc<5)
+{
+/*check if the source file exists or not*/
+if(access(psrcfile, F_OK) == 0)
+ {
+  /*Check if the destination file exists, if it doesnot exist create one with the given name*/
+    int ndestfd = open(pdestfile,O_CREAT|O_RDWR|O_TRUNC,0666);
+    if(ndestfd > 0)
+    {
+    /*Check if the destination file is empty or not*/
+    fstat(ndestfd,&odestfileinfo);
+    int nsrcfd = open(psrcfile, O_RDONLY);
+    if(odestfileinfo.st_size == 0)
+       { 
+       fpCopytoDest(nsrcfd,ndestfd);
+       }
+    else
+      {
+      printf("The file already exists : Do you want to overwrite it ? (Y/N)\n");
+      scanf("%c",&usrchoice);
+       if(usrchoice == 'Y')
+         {
+          fpCopytoDest(nsrcfd,ndestfd);
+         } 
+       else
+         {
+          printf("File is not copied\n");
+         }
+      }
+     }
+   else
+    {
+    printf("Error : Invalid fd for destination file\n");
+    }
+}
+ else
+ {
+ printf("The source file doesnot exists\n");
+ }
+}
+else
+{
+printf("Error: minimum 3 arguments are required\n");
+}
+
+return 0;
+}
+
